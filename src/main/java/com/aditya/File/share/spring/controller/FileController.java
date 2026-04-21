@@ -53,15 +53,15 @@ public class FileController {
         FileMetaDataDTO file =fileMetaDataService.getPublicFile(id);
         return ResponseEntity.ok(file);
     }
-    @GetMapping("/download/{id}")
-    public ResponseEntity<Resource> download(@PathVariable String id) throws IOException {
-        FileMetaDataDTO downloadbleFile =fileMetaDataService.getDownloadFiles(id);
-        Path path = Paths.get(downloadbleFile.getFileLocation());
-        Resource resource = new UrlResource(path.toUri());
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\""+downloadbleFile.getName()+"\"")
-                .body(resource);
-
+   @GetMapping("/download/{id}")
+    public ResponseEntity<?> download(@PathVariable String id) {
+        FileMetaDataDTO file = fileMetaDataService.getDownloadFiles(id);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("url", file.getFileLocation());
+        response.put("name", file.getName());
+        
+        return ResponseEntity.ok(response);
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<?>  deleteFile(@PathVariable String id){

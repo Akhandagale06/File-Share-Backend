@@ -36,17 +36,6 @@ public class UserCreditsService {
     public UserCredits getUserCredits() {
 
         ProfileDocument profile = profileService.getCurrentProfile();
-
-        if (profile == null) {
-            throw new RuntimeException(
-                    "User not initialized. Fix this by:\n" +
-                            "1. Ensure Clerk webhook is working\n" +
-                            "2. Ensure MongoDB is connected\n" +
-                            "3. Ensure user exists in DB\n" +
-                            "4. Try logging out and logging in again"
-            );
-        }
-
         return getUserCredits(profile.getClerkId());
     }
 

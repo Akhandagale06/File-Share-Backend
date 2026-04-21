@@ -22,7 +22,28 @@ public class ProfileService {
         if(profileRepo.existsByClerkId(profileDTO.getClerkId())) {
            return updateProfile(profileDTO);
         }
-      ProfileDocument profile=  ProfileDocument.builder()
+
+        var existingByEmail = profileRepo.findByEmail(profileDTO.getEmail());
+        if (existingByEmail.isPresent()) {
+            ProfileDocument profile = existingByEmail.get();
+            profile.setClerkId(profileDTO.getClerkId());
+            if(profileDTO.getFirstName() != null) profile.setFirstName(profileDTO.getFirstName());
+            if(profileDTO.getLastName() != null) profile.setLastName(profileDTO.getLastName());
+            if(profileDTO.getPhotoUrl() != null) profile.setPhotoUrl(profileDTO.getPhotoUrl());
+            profile = profileRepo.save(profile);
+            return ProfileDTO.builder()
+                   .id(profile.getId())
+                   .clerkId(profile.getClerkId())
+                   .email(profile.getEmail())
+                   .firstName(profile.getFirstName())
+                   .lastName(profile.getLastName())
+                   .photoUrl(profile.getPhotoUrl())
+                   .credits(profile.getCredits())
+                   .createdAt(profile.getCreatedAt())
+                   .build();
+        }
+
+        ProfileDocument profile=  ProfileDocument.builder()
                 .clerkId(profileDTO.getClerkId())
                 .email(profileDTO.getEmail())
                 .firstName(profileDTO.getFirstName())
@@ -97,7 +118,22 @@ public class ProfileService {
             throw new UsernameNotFoundException("User Not Authenticated");
         }
         String clerkId=SecurityContextHolder.getContext().getAuthentication().getName();
-        return profileRepo.findByClerkId(clerkId);
+        ProfileDocument profile = profileRepo.findByClerkId(clerkId);
+        
+        if (profile == null) {
+            // Lazy-load to instantly resolve auth issues if Clerk Webhook is delayed/blocked
+            ProfileDTO newProfile = ProfileDTO.builder()
+                .clerkId(clerkId)
+                .email("missing-email-" + clerkId)
+                .firstName("New")
+                .lastName("Account")
+                .photoUrl("")
+                .build();
+            createProfile(newProfile);
+            profile = profileRepo.findByClerkId(clerkId);
+        }
+        
+        return profile;
     }
 
 }

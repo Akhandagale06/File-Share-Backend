@@ -10,15 +10,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +24,7 @@ public class FileMetaDataService {
     private final ProfileService profileService;
     private final UserCreditsService userCreditsService;
     private final FileMetaDataRepo fileMetaDataRepo;
+    private final CloudinaryService cloudinaryService;
 
 
     public List<FileMetaDataDTO> uploadFiles(MultipartFile files[]) throws IOException {
@@ -38,16 +35,14 @@ public class FileMetaDataService {
          throw new RuntimeException("Not enough credits");
 
      }
-       Path uploadPath= Paths.get("upload").toAbsolutePath().normalize();
-        Files.createDirectories(uploadPath);
-
         for(MultipartFile file : files){
-           String fileName = UUID.randomUUID()+ "." + StringUtils.getFilenameExtension(file.getOriginalFilename());
-         Path targetLocation =  uploadPath.resolve(fileName);
-         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+         Map uploadResult = cloudinaryService.uploadFile(file);
+         String fileUrl = uploadResult.get("secure_url").toString();
+         String publicId = uploadResult.get("public_id").toString();
 
          FileMetaDataDoc fileMetaData = FileMetaDataDoc.builder()
-                 .fileLocation(targetLocation.toString())
+                 .fileLocation(fileUrl)
+                 .publicId(publicId)
                  .name(file.getOriginalFilename())
                  .size(file.getSize())
                  .type(file.getContentType())
@@ -73,6 +68,7 @@ public class FileMetaDataService {
       return    FileMetaDataDTO.builder()
                 .id(fileMetaDataDoc.getId())
                 .fileLocation(fileMetaDataDoc.getFileLocation())
+                .publicId(fileMetaDataDoc.getPublicId())
                 .name(fileMetaDataDoc.getName())
                 .size(fileMetaDataDoc.getSize())
                 .type(fileMetaDataDoc.getType())
@@ -107,11 +103,20 @@ public class FileMetaDataService {
             if(!file.getClerkId().equals(currentProfile.getClerkId())){
                 throw new RuntimeException("File does not belong to existing user");
             }
-            Path filePath =Paths.get(file.getFileLocation());
-            Files.deleteIfExists(filePath);
+            if (file.getPublicId() != null) {
+                cloudinaryService.deleteFile(file.getPublicId());
+            } else {
+                try {
+                    java.nio.file.Path filePath = java.nio.file.Paths.get(file.getFileLocation());
+                    java.nio.file.Files.deleteIfExists(filePath);
+                } catch (Exception e) {
+                    System.err.println("Failed to delete legacy local file: " + e.getMessage());
+                }
+            }
             fileMetaDataRepo.deleteById(id);
 
         }catch (Exception e){
+            e.printStackTrace();
             throw new RuntimeException("Deleting file failed");
         }
     }

@@ -23,5 +23,6 @@ public class FileMetaDataDoc {
     private String clerkId;
     private Boolean isPublic;
     private String fileLocation;
+    private String publicId;
     private LocalDateTime uploadAt;
 }

@@ -36,10 +36,15 @@ public class ClerkJwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+<<<<<<< HEAD
          //Allow webhooks
         if (request.getRequestURI().contains("/webhooks") ||
                 request.getRequestURI().contains("/public") ||
                  request.getRequestURI().contains("/download") ) {
+=======
+        // Allow webhooks   //|| request.getRequestURI().contains("/public") || request.getRequestURI().contains("/download")
+        if (request.getRequestURI().contains("/webhooks") || request.getRequestURI().contains("/public") || request.getRequestURI().contains("/download") ) {
+>>>>>>> a94f758329a61db60e58e18c8fca65169e98e97b
             filterChain.doFilter(request, response);
             return;
         }
@@ -47,7 +52,11 @@ public class ClerkJwtAuthFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
 
+<<<<<<< HEAD
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+=======
+         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+>>>>>>> a94f758329a61db60e58e18c8fca65169e98e97b
             filterChain.doFilter(request, response);//
             return;
         }

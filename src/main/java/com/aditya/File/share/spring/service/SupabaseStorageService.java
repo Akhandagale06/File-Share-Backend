@@ -25,7 +25,11 @@ public class SupabaseStorageService {
     private final OkHttpClient client = new OkHttpClient();
 
     public Map<String, Object> uploadFile(MultipartFile file) throws IOException {
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String originalName = file.getOriginalFilename();
+        if (originalName == null) originalName = "unnamed_file";
+        
+        // Use a unique folder to prevent name collisions while KEEPING the original name.
+        String fileName = UUID.randomUUID().toString() + "/" + originalName;
         String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName;
 
         RequestBody requestBody = RequestBody.create(
